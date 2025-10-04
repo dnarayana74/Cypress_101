@@ -1,0 +1,15 @@
+{
+  "browsers": [
+    { "browser": "Chrome", "platform": "Windows 10", "versions": ["latest"] },
+    { "browser": "MicrosoftEdge", "platform": "macOS Catalina", "versions": ["latest"] }
+  ],
+  "run_settings": {
+    "build": "Cypress Parallel Build",
+    "project": "LambdaTest Playground Tests",
+    "network": true,
+    "console": true,
+    "visual": true,
+    "video": true,
+    "screenshot": true
+  }
+}

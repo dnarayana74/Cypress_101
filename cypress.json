@@ -1,0 +1,10 @@
+{
+  "video": true,
+  "screenshotsFolder": "cypress/screenshots",
+  "videosFolder": "cypress/videos",
+  "reporter": "spec",
+  "env": {
+    "lambdatest_username": "YOUR_USERNAME",
+    "lambdatest_access_key": "YOUR_ACCESS_KEY"
+  }
+}
