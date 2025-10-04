@@ -2,15 +2,23 @@
 
 describe('LambdaTest Playground Tests', () => {
 
-    it('Test Scenario 1: Drag & Drop Slider to 95', () => {
-        cy.visit('/');
-        cy.contains('Drag & Drop Sliders').click();
+    it('Moves slider to 95 and validates output', () => {
+        cy.visit('https://www.lambdatest.com/selenium-playground');
+        cy.contains('Simple Form Demo').click();
 
-        // Move the 3rd slider (Default value 15) to 95
-        cy.get("input[type='range']").eq(2).invoke('val', 95).trigger('change', { force: true });
+        // Wait for element visibility (important for CI)
+        cy.get('#range').should('be.visible');
 
-        // Assert result
-        cy.get('#rangeSuccess', { timeout: 5000 }).should('have.text', '95');
+        // Set slider value to 95 programmatically and trigger UI events
+        cy.get('#range')
+            .invoke('val', 95)
+            .trigger('input', { force: true })
+            .trigger('change', { force: true });
+
+        // Validate that the value updates
+        cy.get('#rangeSuccess', { timeout: 5000 })
+            .should('be.visible')
+            .and('have.text', '95');
     });
 
     it('Test Scenario 2: Input Form Submit with accessibility + performance checks', () => {
@@ -32,7 +40,7 @@ describe('LambdaTest Playground Tests', () => {
 
         // Fill form using both CSS and XPath selectors
         // Scope everything inside the Input Form Submit
-        cy.get("form").within(() => {
+        cy.get("form").first().within(() => {
             cy.get("input[name='name']").first().type("John Doe");
             cy.get("input[name='email']").first().type("john@example.com");
             cy.get("input[name='password']").first().type("Password123");
@@ -63,8 +71,6 @@ describe('LambdaTest Playground Tests', () => {
         }).then((report) => {
             cy.log('Lighthouse scores:', JSON.stringify(report));
         });
-
-        // Close tab (end session)
         cy.end();
     });
 });
