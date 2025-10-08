@@ -18,5 +18,11 @@ pipeline {
                 bat 'npx cypress run --browser chrome'
             }
         }
+
+        stage('Cypress Audit') {
+    steps {
+        sh 'npx cypress run --spec "cypress/e2e/lighthouse.cy.js"'
+    }
+}
     }
 }
