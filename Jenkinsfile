@@ -2,42 +2,67 @@ pipeline {
     agent any
 
     environment {
-        CYPRESS_BROWSER = 'chrome' // Run Cypress in Chrome
+        NODE_VERSION = "18"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     stages {
-        stage('Checkout SCM') {
+
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/dnarayana74/Cypress_101.git'
+                echo "Checking out code from GitHub..."
+                git url: 'https://github.com/dnarayana74/Cypress_101.git', branch: 'main'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Node & Dependencies') {
             steps {
-                bat 'npm ci'
+                echo "Setting up Node.js and installing dependencies..."
+                powershell '''
+                    # Check Node version
+                    node -v
+                    # Clean install dependencies
+                    npm ci
+                    # Fail fast on high-severity vulnerabilities
+                    npm audit --audit-level=high
+                '''
             }
         }
 
         stage('Run Cypress Tests') {
             steps {
-                bat 'npx cypress run --browser chrome --headless'
+                echo "Running Cypress tests..."
+                powershell '''
+                    npx cypress run --browser chrome
+                '''
             }
         }
 
-        stage('Archive Results') {
+        stage('Archive Test Results') {
             steps {
-                archiveArtifacts artifacts: 'cypress\\screenshots\\**\\*', allowEmptyArchive: true
-                archiveArtifacts artifacts: 'cypress\\videos\\**\\*', allowEmptyArchive: true
+                echo "Archiving Cypress videos and screenshots..."
+                archiveArtifacts artifacts: 'cypress\\videos\\**\\*.mp4', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'cypress\\screenshots\\**\\*.png', allowEmptyArchive: true
             }
         }
     }
 
-post {
-  always {
-    junit 'cypress/results/*.xml'
-    archiveArtifacts artifacts: '**/cypress/videos/*.mp4', allowEmptyArchive: true
-    archiveArtifacts artifacts: '**/cypress/screenshots/**/*', allowEmptyArchive: true
-  }
-}
+    post {
+        always {
+            echo "Cleaning up workspace..."
+            cleanWs()
+        }
 
+        success {
+            echo "All Cypress tests passed! ✅"
+        }
+
+        failure {
+            echo "Cypress tests or pipeline failed. ❌ Check archived artifacts for details."
+        }
+    }
 }
