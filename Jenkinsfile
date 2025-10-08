@@ -1,7 +1,17 @@
 pipeline {
     agent any
 
+    environment {
+        CYPRESS_BROWSER = 'chrome' // Run Cypress in Chrome
+    }
+
     stages {
+        stage('Checkout SCM') {
+            steps {
+                git branch: 'main', url: 'https://github.com/dnarayana74/Cypress_101.git'
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 bat 'npm ci'
@@ -10,30 +20,21 @@ pipeline {
 
         stage('Run Cypress Tests') {
             steps {
-                bat 'npm test'
+                bat 'npx cypress run --browser chrome --headless'
             }
         }
 
-        stage('Generate Mochawesome Report') {
+        stage('Archive Results') {
             steps {
-                bat 'npm run merge-reports'
-                bat 'npm run generate-report'
+                archiveArtifacts artifacts: 'cypress\\screenshots\\**\\*', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'cypress\\videos\\**\\*', allowEmptyArchive: true
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'cypress/reports/mochawesome/**/*.html', fingerprint: true
-
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'cypress/reports/mochawesome',
-                reportFiles: 'mochawesome.html',
-                reportName: 'Cypress Test Report'
-            ])
+            junit 'cypress\\results\\*.xml'
         }
     }
 }
