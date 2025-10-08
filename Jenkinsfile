@@ -19,6 +19,25 @@ pipeline {
             }
         }
 
+    stage('Generate Mochawesome Report') {
+      steps {
+        sh 'npm run merge-reports'
+        sh 'npm run generate-report'
+      }
+    }
+
+     post {
+    always {
+      archiveArtifacts artifacts: 'cypress/reports/mochawesome/**/*.html', fingerprint: true
+      publishHTML ([
+        allowMissing: false,
+        alwaysLinkToLastBuild: true,
+        keepAll: true,
+        reportDir: 'cypress/reports/mochawesome',
+        reportFiles: 'mochawesome.html',
+        reportName: 'Cypress Test Report'
+      ])
+    }
         stage('Cypress Audit') {
     steps {
         sh 'npx cypress run --spec "cypress/e2e/lighthouse.cy.js"'
