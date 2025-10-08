@@ -2,13 +2,12 @@ pipeline {
     agent any
 
     environment {
-        NODEJS_HOME = "C:\\Program Files\\nodejs"  // Update if Node is installed elsewhere
+        NODEJS_HOME = "C:\\Program Files\\nodejs"  // Update to your Node.js installation path
         PATH = "${env.NODEJS_HOME};${env.PATH}"
     }
 
     options {
         timeout(time: 30, unit: 'MINUTES')
-        ansiColor('xterm')
         buildDiscarder(logRotator(numToKeepStr: '10'))
     }
 
@@ -52,7 +51,6 @@ pipeline {
             steps {
                 echo 'Running Cypress tests...'
                 powershell '''
-                    # Run Cypress tests in headless mode
                     npx cypress run --browser chrome
                 '''
             }
