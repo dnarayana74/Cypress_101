@@ -1,23 +1,18 @@
 pipeline {
-    agent any
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/dnarayana74/Cypress_101.git',
-                    credentialsId: 'github-access-token'
-            }
-        }
-        stage('Install Dependencies') {
-            steps {
-                bat 'npm install'
-            }
-        }
-        stage('Run Cypress Tests') {
-            steps {
-                bat 'npx cypress run --browser chrome'
-            }
-        }
+  agent any
+
+  stages {
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm ci'
+      }
+    }
+
+    stage('Run Cypress Tests') {
+      steps {
+        sh 'npm test'
+      }
+    }
 
     stage('Generate Mochawesome Report') {
       steps {
@@ -25,10 +20,14 @@ pipeline {
         sh 'npm run generate-report'
       }
     }
+  }
 
-     post {
+  post {
     always {
+      // Archive the Mochawesome HTML report
       archiveArtifacts artifacts: 'cypress/reports/mochawesome/**/*.html', fingerprint: true
+
+      // Publish the HTML report to Jenkins
       publishHTML ([
         allowMissing: false,
         alwaysLinkToLastBuild: true,
@@ -38,11 +37,5 @@ pipeline {
         reportName: 'Cypress Test Report'
       ])
     }
-        stage('Cypress Audit') {
-    steps {
-        sh 'npx cypress run --spec "cypress/e2e/lighthouse.cy.js"'
-    }
-}
-    }
-}
+  }
 }
