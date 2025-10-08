@@ -13,6 +13,8 @@ module.exports = defineConfig({
     reporter: "spec",
     e2e: {
         baseUrl: "https://www.lambdatest.com/selenium-playground",
+        defaultCommandTimeout: 10000,
+        pageLoadTimeout: 60000,
         viewportWidth: 1280,
         viewportHeight: 720,
         setupNodeEvents(on, config) {
@@ -25,7 +27,6 @@ module.exports = defineConfig({
                 pa11y: pa11y(),
             });
 
-            return config;
         },
     },
 });
