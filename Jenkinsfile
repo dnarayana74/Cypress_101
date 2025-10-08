@@ -1,67 +1,109 @@
 pipeline {
     agent any
 
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
+    }
+
+    tools {
+        nodejs 'NodeJS_22' // Must match NodeJS installation in Jenkins
+    }
+
     environment {
-        NODEJS_HOME = "C:\\Program Files\\nodejs" // your Node.js path
-        PATH = "${env.NODEJS_HOME};${env.PATH}"
+        PATH = "${tool 'NodeJS_22'};${env.PATH}"
+        NODE_CACHE_DIR = "${WORKSPACE}\\node_modules_cache"
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                echo "Checking out code from GitHub..."
-                git branch: 'main', url: 'https://github.com/dnarayana74/Cypress_101.git', credentialsId: 'github-access-token'
+                echo 'Checking out code from GitHub...'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/dnarayana74/Cypress_101.git',
+                        credentialsId: 'github-access-token' // Replace with your Jenkins credential ID
+                    ]]
+                ])
             }
         }
 
-        stage('Setup Node & Dependencies') {
+        stage('Restore Node Modules Cache') {
             steps {
-                echo 'Setting up Node.js and installing dependencies...'
+                echo "Restoring node_modules from cache..."
                 powershell '''
-                    node -v
-                    npm -v
+                    if (Test-Path $env:NODE_CACHE_DIR) {
+                        Write-Host "Cache found. Restoring node_modules..."
+                        Copy-Item "$env:NODE_CACHE_DIR\\*" "$PWD\\node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+                    } else {
+                        Write-Host "No cache found."
+                    }
+                '''
+            }
+        }
 
-                    Write-Host "Installing npm dependencies..."
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installing project dependencies...'
+                powershell '''
+                    Write-Host "Node version: $(node -v)"
+                    Write-Host "NPM version: $(npm -v)"
+
+                    if (!(Test-Path "node_modules")) { New-Item -ItemType Directory -Path "node_modules" | Out-Null }
+
+                    Write-Host "Installing dependencies..."
                     npm ci
 
+                    Write-Host "Ensuring Cypress is installed..."
+                    npx cypress verify || npx cypress install
+
                     Write-Host "Running npm audit fix (non-breaking)..."
-                    try {
-                        npm audit fix
-                    } catch {
-                        Write-Host "Some issues may need manual review, continuing..."
-                    }
+                    npm audit fix || Write-Host "Some vulnerabilities remain, continuing..."
+                '''
+            }
+        }
+
+        stage('Save Node Modules Cache') {
+            steps {
+                echo "Saving node_modules to cache..."
+                powershell '''
+                    if (!(Test-Path $env:NODE_CACHE_DIR)) { New-Item -ItemType Directory -Path $env:NODE_CACHE_DIR | Out-Null }
+                    Copy-Item "$PWD\\node_modules\\*" "$env:NODE_CACHE_DIR" -Recurse -Force
+                    Write-Host "node_modules cache updated."
                 '''
             }
         }
 
         stage('Run Cypress Tests') {
             steps {
-                echo "Running Cypress tests..."
+                echo 'Running Cypress tests with screenshots, videos, and JUnit report...'
                 powershell '''
-                    npx cypress run
+                    npx cypress run --reporter junit --reporter-options "mochaFile=cypress/results/results-[hash].xml,toConsole=true"
                 '''
             }
-        }
-
-        stage('Archive Test Results') {
-            steps {
-                echo "Archiving test results..."
-                junit 'cypress/results/*.xml'
-                archiveArtifacts artifacts: 'cypress/screenshots/**/*.*, cypress/videos/**/*.*', allowEmptyArchive: true
+            post {
+                always {
+                    echo 'Archiving Cypress artifacts and test results...'
+                    archiveArtifacts artifacts: 'cypress/videos/**/*.mp4', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'cypress/screenshots/**/*.png', allowEmptyArchive: true
+                    junit 'cypress/results/*.xml'
+                }
             }
         }
     }
 
     post {
         always {
-            echo "Cleaning workspace..."
+            echo 'Cleaning workspace...'
             cleanWs()
         }
         success {
-            echo "Pipeline succeeded!"
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo "Pipeline failed. Check test results."
+            echo 'Pipeline failed. Check Cypress test results!'
         }
     }
 }
