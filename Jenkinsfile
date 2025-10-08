@@ -7,7 +7,7 @@ pipeline {
     }
 
     tools {
-        nodejs 'NodeJS_22' // Must match NodeJS installation in Jenkins
+        nodejs 'NodeJS_22'
     }
 
     environment {
