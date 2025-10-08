@@ -32,9 +32,12 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            junit 'cypress\\results\\*.xml'
-        }
-    }
+post {
+  always {
+    junit 'cypress/results/*.xml'
+    archiveArtifacts artifacts: '**/cypress/videos/*.mp4', allowEmptyArchive: true
+    archiveArtifacts artifacts: '**/cypress/screenshots/**/*', allowEmptyArchive: true
+  }
+}
+
 }
