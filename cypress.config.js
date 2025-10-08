@@ -3,10 +3,10 @@ const { lighthouse, prepareAudit } = require("@cypress-audit/lighthouse");
 const { pa11y } = require("@cypress-audit/pa11y");
 
 module.exports = defineConfig({
-    // reporter: 'mocha-junit-reporter',
+    reporter: 'mocha-junit-reporter',
     reporter: "mochawesome",
     reporterOptions: {
-        // mochaFile: 'cypress/results/results-[hash].xml',
+        mochaFile: 'cypress/results/results-[hash].xml',
         reportDir: "cypress/reports/mochawesome",
         overwrite: false,
         html: false,
