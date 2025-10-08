@@ -1,41 +1,39 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Install Dependencies') {
-      steps {
-        sh 'npm ci'
-      }
+    stages {
+        stage('Install Dependencies') {
+            steps {
+                bat 'npm ci'
+            }
+        }
+
+        stage('Run Cypress Tests') {
+            steps {
+                bat 'npm test'
+            }
+        }
+
+        stage('Generate Mochawesome Report') {
+            steps {
+                bat 'npm run merge-reports'
+                bat 'npm run generate-report'
+            }
+        }
     }
 
-    stage('Run Cypress Tests') {
-      steps {
-        sh 'npm test'
-      }
-    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'cypress/reports/mochawesome/**/*.html', fingerprint: true
 
-    stage('Generate Mochawesome Report') {
-      steps {
-        sh 'npm run merge-reports'
-        sh 'npm run generate-report'
-      }
+            publishHTML([
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'cypress/reports/mochawesome',
+                reportFiles: 'mochawesome.html',
+                reportName: 'Cypress Test Report'
+            ])
+        }
     }
-  }
-
-  post {
-    always {
-      // Archive the Mochawesome HTML report
-      archiveArtifacts artifacts: 'cypress/reports/mochawesome/**/*.html', fingerprint: true
-
-      // Publish the HTML report to Jenkins
-      publishHTML ([
-        allowMissing: false,
-        alwaysLinkToLastBuild: true,
-        keepAll: true,
-        reportDir: 'cypress/reports/mochawesome',
-        reportFiles: 'mochawesome.html',
-        reportName: 'Cypress Test Report'
-      ])
-    }
-  }
 }
