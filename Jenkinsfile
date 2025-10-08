@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(
+            name: 'RUN_AUDIT_FIX',
+            defaultValue: false,
+            description: 'Run npm audit fix (non-breaking) before tests?'
+        )
+    }
+
     environment {
         CYPRESS_BASE_URL = 'http://localhost:3000'
     }
@@ -23,8 +31,11 @@ pipeline {
                     # Install dependencies
                     npm ci
 
-                    # Attempt to fix vulnerabilities without breaking changes
-                    npm audit fix || Write-Host "Some issues may require manual review"
+                    # Conditional npm audit fix
+                    if ($env:RUN_AUDIT_FIX -eq "true") {
+                        Write-Host "Running npm audit fix..."
+                        npm audit fix || Write-Host "Some issues may require manual review"
+                    }
 
                     # Verify or install Cypress
                     npx cypress verify || npx cypress install
